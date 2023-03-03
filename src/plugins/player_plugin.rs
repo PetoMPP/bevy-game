@@ -3,7 +3,9 @@ use std::time::Duration;
 use crate::{
     components::{
         movable::{Movable, MovementOptions, MovementViewportBehavior},
-        velocity::{AngleVelocity, Velocity}, sizeable::Sizeable, projectile::{Projectile, Target},
+        projectile::{Projectile, Target},
+        sizeable::Sizeable,
+        velocity::{AngleVelocity, Velocity},
     },
     resources::textures::Textures,
     ViewportSize, SPRITE_SCALE,
@@ -211,29 +213,33 @@ fn player_keyboard_event_system(
     mut query: Query<(&mut Velocity, &mut AngleVelocity), With<Player>>,
 ) {
     if let Ok((mut velocity, mut angle_velocity)) = query.get_single_mut() {
-        let pressed = bindings.pressed(key);
-        velocity.y = if pressed.contains(&PlayerKey::Up) {
-            1.
-        } else if pressed.contains(&PlayerKey::Down) {
-            -1.
-        } else {
-            0.
+        let pressed_keys = &bindings.pressed(key);
+
+        velocity.x = match (
+            pressed_keys.contains(&PlayerKey::Left),
+            pressed_keys.contains(&PlayerKey::Right),
+        ) {
+            (true, false) => -1.0,
+            (false, true) => 1.0,
+            _ => 0.0,
         };
 
-        velocity.x = if pressed.contains(&PlayerKey::Left) {
-            -1.
-        } else if pressed.contains(&PlayerKey::Right) {
-            1.
-        } else {
-            0.
+        velocity.y = match (
+            pressed_keys.contains(&PlayerKey::Down),
+            pressed_keys.contains(&PlayerKey::Up),
+        ) {
+            (true, false) => -1.0,
+            (false, true) => 1.0,
+            _ => 0.0,
         };
 
-        angle_velocity.0 = if pressed.contains(&PlayerKey::RotateCw) {
-            -1.
-        } else if pressed.contains(&PlayerKey::RotateCcw) {
-            1.
-        } else {
-            0.
+        angle_velocity.0 = match (
+            pressed_keys.contains(&PlayerKey::RotateCw),
+            pressed_keys.contains(&PlayerKey::RotateCcw),
+        ) {
+            (true, false) => -1.0,
+            (false, true) => 1.0,
+            _ => 0.0,
         };
     }
 }

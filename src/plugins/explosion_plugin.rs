@@ -4,11 +4,14 @@ use bevy::prelude::*;
 
 use crate::{resources::textures::Textures, SPRITE_SCALE};
 
-use super::sprite_animation_plugin::AnimationTimer;
+use super::{movement_plugin::TIME_STEP, sprite_animation_plugin::AnimationTimer};
+
+const FRAMES_PER_TIME_STEP: u32 = 2;
+const ANIMATION_STEP_S: f32 = TIME_STEP * FRAMES_PER_TIME_STEP as f32;
 
 #[derive(Component)]
 pub struct ExplosionInvoke {
-    pub translation: Vec3
+    pub translation: Vec3,
 }
 
 pub struct ExplosionPlugin;
@@ -40,7 +43,10 @@ fn explosion_spawn_system(
                 ..Default::default()
             },
             AnimationTimer {
-                timer: Timer::new(Duration::from_millis(50), TimerMode::Repeating),
+                timer: Timer::new(
+                    Duration::from_secs_f32(ANIMATION_STEP_S),
+                    TimerMode::Repeating,
+                ),
                 play_once: true,
             },
         ));

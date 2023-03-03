@@ -3,7 +3,10 @@ use bevy::sprite::collide_aabb::collide as bevy_collide;
 use rand::Rng;
 
 use crate::{
-    components::{projectile::{Projectile, Target}, sizeable::Sizeable},
+    components::{
+        projectile::{Projectile, Target},
+        sizeable::Sizeable,
+    },
     plugins::explosion_plugin::ExplosionInvoke,
     resources::textures::Textures,
     ViewportSize, SPRITE_SCALE,
@@ -55,7 +58,6 @@ fn enemy_respawn_system(
         };
         let enemy_size = textures.enemy.size_px;
         let mut enemy_trans = get_next_trans();
-        // let mut enemy_trans = get_next_trans();
         let enemy_scale = Vec3 {
             x: SPRITE_SCALE,
             y: SPRITE_SCALE,
@@ -114,23 +116,21 @@ fn enemy_get_hit_system(
     proj_query: Query<(Entity, &Sizeable, &Transform, &Projectile)>,
     enemy_query: Query<(Entity, &Sizeable, &Transform), With<Enemy>>,
 ) {
-    let mut despawn_enemy = |enemy: Entity, enemy_trans: &Transform, projectile: Entity| {
-        commands.entity(enemy).despawn();
-        commands.entity(projectile).despawn();
+    let mut despawn_enemy = |enemy_entity: Entity, enemy_trans: &Transform, proj_entity: Entity| {
+        commands.entity(enemy_entity).despawn();
+        commands.entity(proj_entity).despawn();
         commands.spawn_empty().insert(ExplosionInvoke {
             translation: enemy_trans.translation,
         });
         commands.spawn_empty().insert(EnemyRespawn {});
     };
-    for (enemy, enemy_size, enemy_trans) in enemy_query.iter() {
-        for (projectile, proj_size, proj_trans, _) in proj_query
+    for (enemy_entity, enemy_size, enemy_trans) in enemy_query.iter() {
+        for (proj_entity, proj_size, proj_trans, _) in proj_query
             .iter()
             .filter(|(_, _, _, projectile)| ***projectile == Target::Enemy)
         {
-            let collision = collide_entities(proj_trans, proj_size, enemy_trans, enemy_size);
-
-            if collision {
-                despawn_enemy(enemy, enemy_trans, projectile);
+            if collide_entities(proj_trans, proj_size, enemy_trans, enemy_size) {
+                despawn_enemy(enemy_entity, enemy_trans, proj_entity);
                 break;
             }
         }
@@ -161,11 +161,11 @@ fn collide(
     size2: Vec2,
     scale2: Vec3,
 ) -> bool {
-    let collision = bevy_collide(
+    bevy_collide(
         translation1,
         size1 * scale1.x,
         translation2,
         size2 * scale2.x,
-    );
-    collision.is_some()
+    )
+    .is_some()
 }

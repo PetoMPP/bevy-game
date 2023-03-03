@@ -1,6 +1,9 @@
 use bevy::prelude::*;
-use plugins::{movement_plugin::MovementPlugin, player_plugin::PlayerPlugin, enemy_plugin::EnemyPlugin, explosion_plugin::ExplosionPlugin, sprite_animation_plugin::SpriteAnimationPlugin};
-use resources::{viewport_size::ViewportSize, textures::Textures};
+use plugins::{
+    enemy_plugin::EnemyPlugin, explosion_plugin::ExplosionPlugin, movement_plugin::MovementPlugin,
+    player_plugin::PlayerPlugin, sprite_animation_plugin::SpriteAnimationPlugin, resources_plugin::ResourcePlugin,
+};
+use resources::viewport_size::ViewportSize;
 
 mod components;
 mod plugins;
@@ -21,25 +24,12 @@ fn build_app() -> App {
         .add_plugin(ExplosionPlugin {})
         .add_plugin(PlayerPlugin {})
         .add_plugin(EnemyPlugin {})
+        .add_plugin(ResourcePlugin {})
         .add_startup_system(setup_system);
     app
 }
 
-fn setup_system(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut windows: ResMut<Windows>
-) {
-    // windows
-    let windows = windows.get_primary_mut().unwrap();
-    windows.set_resolution(1000., 600.);
-    // windows.set_position(MonitorSelection::Current, IVec2 { x: 100, y: 100 });
-
+fn setup_system(mut commands: Commands) {
     // camera
     commands.spawn(Camera2dBundle::default());
-
-    // insert resources
-    commands.insert_resource(ViewportSize { w: 1000., h: 600. });
-    commands.insert_resource(Textures::init(asset_server, texture_atlases));
 }
