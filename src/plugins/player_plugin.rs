@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     components::{
         movable::{Movable, MovementOptions, MovementViewportBehavior},
@@ -10,7 +8,9 @@ use crate::{
     resources::textures::Textures,
     ViewportSize, SPRITE_SCALE,
 };
-use bevy::{app::AppExit, prelude::*};
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
+
+use super::explosion_plugin::ExplosionInvoke;
 
 #[derive(PartialEq)]
 enum PlayerKey {
@@ -34,15 +34,13 @@ struct PlayerKeyBinding {
     fire: Vec<KeyCode>,
 }
 
-#[derive(Resource)]
-struct PlayerFireCooldown {
-    timer: Timer,
-}
+const FIRE_COOLDOWN_S: f32 = 0.25;
+
+#[derive(Resource, Deref, DerefMut)]
+struct PlayerLastFire(pub f32);
 
 #[derive(Component)]
-pub struct Player {
-    pub can_shoot: bool,
-}
+pub struct Player;
 
 #[derive(Component)]
 pub struct HitPlayer;
@@ -95,9 +93,22 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system_to_stage(StartupStage::PostStartup, player_spawn_system)
             .add_system(player_keyboard_event_system)
-            .add_system(player_fire_system)
-            .add_system(player_on_hit_system)
-            .add_system(player_fire_cooldown_system);
+            .add_system_set(
+                SystemSet::new()
+                .with_system(player_fire_system)
+                .with_run_criteria(player_fire_criteria)
+            )
+            .add_system(player_on_hit_system);
+    }
+}
+
+fn player_fire_criteria(
+    time: Res<Time>,
+    last_fire: Res<PlayerLastFire>,
+) -> ShouldRun {
+    return match (time.elapsed_seconds() - **last_fire) >= FIRE_COOLDOWN_S {
+        true => ShouldRun::Yes,
+        false => ShouldRun::No,
     }
 }
 
@@ -107,9 +118,7 @@ pub fn player_spawn_system(
     textures: Res<Textures>,
 ) {
     commands.insert_resource(PlayerKeyBinding::default());
-    commands.insert_resource(PlayerFireCooldown {
-        timer: Timer::new(Duration::from_millis(500), TimerMode::Repeating),
-    });
+    commands.insert_resource(PlayerLastFire(0.));
 
     let ytrans = -viewport_size.h / 2. + textures.player.size_px.y * SPRITE_SCALE / 2.;
     commands
@@ -126,7 +135,7 @@ pub fn player_spawn_system(
             },
             ..Default::default()
         })
-        .insert(Player { can_shoot: true })
+        .insert(Player {})
         .insert(Velocity::from(Vec2::new(0., 0.)))
         .insert(AngleVelocity(0.))
         .insert(Sizeable(textures.player.size_px))
@@ -135,36 +144,18 @@ pub fn player_spawn_system(
         }));
 }
 
-fn player_fire_cooldown_system(
-    time: Res<Time>,
-    mut respawn_cooldown: ResMut<PlayerFireCooldown>,
-    mut query: Query<&mut Player>,
-) {
-    if let Ok(mut player) = query.get_single_mut() {
-        if !player.can_shoot {
-            respawn_cooldown.timer.tick(time.delta());
-            if respawn_cooldown.timer.finished() {
-                player.can_shoot = true;
-            }
-        }
-    }
-}
-
 fn player_fire_system(
     mut commands: Commands,
     key: Res<Input<KeyCode>>,
     bindings: Res<PlayerKeyBinding>,
     textures: Res<Textures>,
-    mut respawn_cooldown: ResMut<PlayerFireCooldown>,
-    mut query: Query<(&Transform, &Sizeable, &mut Player)>,
+    time: Res<Time>,
+    mut last_fire: ResMut<PlayerLastFire>,
+    query: Query<(&Transform, &Sizeable), With<Player>>,
 ) {
-    if let Ok((player_trans, player_size, mut player)) = query.get_single_mut() {
+    if let Ok((player_trans, player_size)) = query.get_single() {
         let pressed = bindings.pressed(key);
         if pressed.contains(&PlayerKey::Fire) {
-            if !player.can_shoot {
-                return;
-            }
-
             let offset = *Velocity(Vec3 {
                 x: player_size.x / 2. * player_trans.scale.x - 5.,
                 y: player_size.x / 4. * player_trans.scale.x,
@@ -200,9 +191,7 @@ fn player_fire_system(
             })
             .rotate(player_trans.rotation);
             spawn_fire(offset);
-
-            respawn_cooldown.timer = Timer::new(Duration::from_millis(250), TimerMode::Once);
-            player.can_shoot = false;
+            last_fire.0 = time.elapsed_seconds();
         }
     }
 }
@@ -244,8 +233,16 @@ fn player_keyboard_event_system(
     }
 }
 
-fn player_on_hit_system(mut exit: EventWriter<AppExit>, query: Query<&HitPlayer>) {
-    if query.get_single().is_ok() {
-        exit.send(AppExit);
+fn player_on_hit_system(
+    mut commands: Commands,
+    hit_query: Query<&HitPlayer>,
+    player_query: Query<(Entity, &Transform), With<Player>>,
+) {
+    if hit_query.get_single().is_ok() {
+        let (player, player_trans) =  player_query.single();
+        commands.spawn_empty().insert(ExplosionInvoke {
+            translation: player_trans.translation,
+        });
+        commands.entity(player).despawn();
     }
 }

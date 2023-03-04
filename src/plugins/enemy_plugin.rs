@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide as bevy_collide;
+use bevy::{prelude::*, time::FixedTimestep};
 use rand::Rng;
 
 use crate::{
@@ -12,9 +12,11 @@ use crate::{
     ViewportSize, SPRITE_SCALE,
 };
 
+use super::movement_plugin::TIME_STEP;
 use super::player_plugin::{HitPlayer, Player};
 
 const INITIAL_ENEMIES_COUNT: u16 = 5;
+const ENEMY_RESPAWN_DELAY: f32 = TIME_STEP * 120.;
 
 #[derive(Component)]
 pub struct EnemyRespawn;
@@ -27,7 +29,11 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system_to_stage(StartupStage::PostStartup, initial_enemies_spawn_system)
-            .add_system(enemy_respawn_system)
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(FixedTimestep::step(ENEMY_RESPAWN_DELAY as f64))
+                    .with_system(enemy_respawn_system),
+            )
             .add_system(enemy_get_hit_system)
             .add_system(enemy_hit_player_on_collision_system);
     }
@@ -91,9 +97,8 @@ fn enemy_respawn_system(
             .insert(Enemy {})
             .insert(Sizeable(enemy_size));
     };
-
-    for entity in query.iter() {
-        spawn_enemy(entity);
+    if let Some(enemy) = query.iter().next() {
+        spawn_enemy(enemy);
     }
 }
 
