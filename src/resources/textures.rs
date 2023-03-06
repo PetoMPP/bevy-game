@@ -45,7 +45,7 @@ fn tuple_into_vec(tuple: (f32, f32)) -> Vec2 {
 
 impl Textures {
     pub fn init(
-        asset_server: Res<AssetServer>,
+        asset_server: &Res<AssetServer>,
         mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     ) -> Self {
         Self {

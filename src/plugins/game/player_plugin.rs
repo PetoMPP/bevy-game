@@ -6,11 +6,11 @@ use crate::{
         velocity::{AngleVelocity, Velocity},
     },
     resources::textures::Textures,
-    ViewportSize, SPRITE_SCALE,
+    AppState, ViewportSize, SPRITE_SCALE, plugins::delayed_state_switch_plugin::StateSwitchCommand,
 };
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::prelude::*;
 
-use super::explosion_plugin::ExplosionInvoke;
+use super::{explosion_plugin::ExplosionInvoke};
 
 #[derive(PartialEq)]
 enum PlayerKey {
@@ -91,28 +91,32 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, player_spawn_system)
-            .add_system(player_keyboard_event_system)
+        app.add_system_set(SystemSet::on_enter(AppState::Playing).with_system(player_spawn_system))
             .add_system_set(
-                SystemSet::new()
-                .with_system(player_fire_system)
-                .with_run_criteria(player_fire_criteria)
+                SystemSet::on_update(AppState::Playing)
+                    .with_system(player_fire_system)
+                    .with_system(player_on_hit_system)
+                    .with_system(player_keyboard_event_system),
             )
-            .add_system(player_on_hit_system);
+            .add_system_set(SystemSet::on_exit(AppState::Playing).with_system(cleanup_system));
     }
 }
 
-fn player_fire_criteria(
-    time: Res<Time>,
-    last_fire: Res<PlayerLastFire>,
-) -> ShouldRun {
-    return match (time.elapsed_seconds() - **last_fire) >= FIRE_COOLDOWN_S {
-        true => ShouldRun::Yes,
-        false => ShouldRun::No,
-    }
+fn cleanup_system(
+    mut commands: Commands,
+    player_query: Query<Entity, With<Player>>,
+    hit_query: Query<Entity, With<HitPlayer>>,
+    mut last_fire: ResMut<PlayerLastFire>,
+) {
+    player_query.iter()
+    .chain(hit_query.iter())
+    .for_each(|e| {
+        commands.entity(e).despawn();
+    });
+    last_fire.0 = 0.;
 }
 
-pub fn player_spawn_system(
+fn player_spawn_system(
     mut commands: Commands,
     viewport_size: Res<ViewportSize>,
     textures: Res<Textures>,
@@ -156,6 +160,10 @@ fn player_fire_system(
     if let Ok((player_trans, player_size)) = query.get_single() {
         let pressed = bindings.pressed(key);
         if pressed.contains(&PlayerKey::Fire) {
+            if (time.elapsed_seconds() - **last_fire) < FIRE_COOLDOWN_S {
+                return;
+            }
+
             let offset = *Velocity(Vec3 {
                 x: player_size.x / 2. * player_trans.scale.x - 5.,
                 y: player_size.x / 4. * player_trans.scale.x,
@@ -235,14 +243,21 @@ fn player_keyboard_event_system(
 
 fn player_on_hit_system(
     mut commands: Commands,
-    hit_query: Query<&HitPlayer>,
+    hit_query: Query<Entity, With<HitPlayer>>,
     player_query: Query<(Entity, &Transform), With<Player>>,
 ) {
-    if hit_query.get_single().is_ok() {
-        let (player, player_trans) =  player_query.single();
-        commands.spawn_empty().insert(ExplosionInvoke {
-            translation: player_trans.translation,
-        });
-        commands.entity(player).despawn();
+    // immortality on double hit yay!
+    if let Ok(hit) = hit_query.get_single() {
+        if let Ok((player, player_trans)) = player_query.get_single() {
+            commands.spawn_empty().insert(ExplosionInvoke {
+                translation: player_trans.translation,
+            });
+            commands.spawn_empty().insert(StateSwitchCommand {
+                target: AppState::MainMenu,
+                delay: Timer::from_seconds(2., TimerMode::Once),
+            });
+            commands.entity(player).despawn();
+            commands.entity(hit).despawn();
+        }
     }
 }

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::resources::{viewport_size::ViewportSize, textures::Textures};
+use crate::resources::{viewport_size::ViewportSize, textures::Textures, fonts::Fonts};
 
 pub struct ResourcePlugin;
 
@@ -22,5 +22,6 @@ fn create_required_resources(
 
     // insert resources
     commands.insert_resource(ViewportSize { w: 1000., h: 600. });
-    commands.insert_resource(Textures::init(asset_server, texture_atlases));
+    commands.insert_resource(Textures::init(&asset_server, texture_atlases));
+    commands.insert_resource(Fonts::init(&asset_server));
 }

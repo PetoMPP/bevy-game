@@ -1,16 +1,18 @@
 use bevy::prelude::*;
 
+use crate::AppState;
+
 #[derive(Component)]
-pub struct AnimationTimer{
+pub struct AnimationTimer {
     pub timer: Timer,
-    pub play_once: bool
+    pub play_once: bool,
 }
 
 pub struct SpriteAnimationPlugin;
 
 impl Plugin for SpriteAnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(animate_sprite);
+        app.add_system_set(SystemSet::on_update(AppState::Playing).with_system(animate_sprite));
     }
 }
 
