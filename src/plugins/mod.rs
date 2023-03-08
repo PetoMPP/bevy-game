@@ -1,6 +1,6 @@
-pub mod player_plugin;
-pub mod movement_plugin;
-pub mod enemy_plugin;
-pub mod explosion_plugin;
-pub mod sprite_animation_plugin;
+pub mod delayed_state_switch_plugin;
 pub mod resources_plugin;
+pub mod sprite_animation_plugin;
+pub mod start_menu;
+pub mod game;
+pub mod ui_interaction_plugin;

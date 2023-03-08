@@ -2,22 +2,34 @@ use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide as bevy_collide;
 use rand::Rng;
 
+use crate::AppState;
 use crate::{
     components::{
         projectile::{Projectile, Target},
         sizeable::Sizeable,
     },
-    plugins::explosion_plugin::ExplosionInvoke,
     resources::textures::Textures,
     ViewportSize, SPRITE_SCALE,
 };
 
+use super::explosion_plugin::ExplosionInvoke;
+use super::movement_plugin::TIME_STEP;
 use super::player_plugin::{HitPlayer, Player};
 
 const INITIAL_ENEMIES_COUNT: u16 = 5;
+const ENEMY_RESPAWN_DELAY: f32 = TIME_STEP * 120.;
 
 #[derive(Component)]
 pub struct EnemyRespawn;
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct LastEnemyRespawn(pub f32);
+
+impl Default for LastEnemyRespawn {
+    fn default() -> Self {
+        Self(-(ENEMY_RESPAWN_DELAY + 1.))
+    }
+}
 
 #[derive(Component)]
 pub struct Enemy;
@@ -26,14 +38,33 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, initial_enemies_spawn_system)
-            .add_system(enemy_respawn_system)
-            .add_system(enemy_get_hit_system)
-            .add_system(enemy_hit_player_on_collision_system);
+        app.add_system_set(
+            SystemSet::on_enter(AppState::Playing).with_system(initial_enemies_spawn_system),
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::Playing)
+                .with_system(enemy_respawn_system)
+                .with_system(enemy_get_hit_system)
+                .with_system(enemy_hit_player_on_collision_system),
+        )
+        .add_system_set(SystemSet::on_exit(AppState::Playing).with_system(cleanup_system));
     }
 }
 
+fn cleanup_system(
+    mut commands: Commands,
+    mut last_spawn: ResMut<LastEnemyRespawn>,
+    respawn_query: Query<Entity, With<EnemyRespawn>>,
+    enemy_query: Query<Entity, With<Enemy>>,
+) {
+    respawn_query.iter().chain(enemy_query.iter()).for_each(|e| {
+        commands.entity(e).despawn();
+    });
+    last_spawn.0 = *LastEnemyRespawn::default();
+}
+
 fn initial_enemies_spawn_system(mut commands: Commands) {
+    commands.insert_resource(LastEnemyRespawn::default());
     (0..INITIAL_ENEMIES_COUNT).for_each(|_| {
         commands.spawn_empty().insert(EnemyRespawn);
     });
@@ -41,11 +72,17 @@ fn initial_enemies_spawn_system(mut commands: Commands) {
 
 fn enemy_respawn_system(
     mut commands: Commands,
+    time: Res<Time>,
+    mut last_spawn: ResMut<LastEnemyRespawn>,
     textures: Res<Textures>,
     viewport_size: Res<ViewportSize>,
     query: Query<Entity, With<EnemyRespawn>>,
     player_query: Query<(&Sizeable, &Transform), With<Player>>,
 ) {
+    if time.elapsed_seconds() - **last_spawn < ENEMY_RESPAWN_DELAY {
+        return;
+    }
+
     let mut rand = rand::thread_rng();
 
     let mut spawn_enemy = |entity| {
@@ -91,9 +128,9 @@ fn enemy_respawn_system(
             .insert(Enemy {})
             .insert(Sizeable(enemy_size));
     };
-
-    for entity in query.iter() {
-        spawn_enemy(entity);
+    if let Some(enemy) = query.iter().next() {
+        spawn_enemy(enemy);
+        last_spawn.0 = time.elapsed_seconds();
     }
 }
 
