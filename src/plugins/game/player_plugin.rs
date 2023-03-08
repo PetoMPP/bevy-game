@@ -6,11 +6,11 @@ use crate::{
         velocity::{AngleVelocity, Velocity},
     },
     resources::textures::Textures,
-    AppState, ViewportSize, SPRITE_SCALE, plugins::delayed_state_switch_plugin::StateSwitchCommand,
+    AppState, ViewportSize, SPRITE_SCALE, plugins::delayed_state_switch_plugin::StateSetCommand,
 };
 use bevy::prelude::*;
 
-use super::{explosion_plugin::ExplosionInvoke};
+use super::explosion_plugin::ExplosionInvoke;
 
 #[derive(PartialEq)]
 enum PlayerKey {
@@ -106,10 +106,12 @@ fn cleanup_system(
     mut commands: Commands,
     player_query: Query<Entity, With<Player>>,
     hit_query: Query<Entity, With<HitPlayer>>,
+    proj_query: Query<Entity, With<Projectile>>,
     mut last_fire: ResMut<PlayerLastFire>,
 ) {
     player_query.iter()
     .chain(hit_query.iter())
+    .chain(proj_query.iter())
     .for_each(|e| {
         commands.entity(e).despawn();
     });
@@ -252,7 +254,7 @@ fn player_on_hit_system(
             commands.spawn_empty().insert(ExplosionInvoke {
                 translation: player_trans.translation,
             });
-            commands.spawn_empty().insert(StateSwitchCommand {
+            commands.spawn_empty().insert(StateSetCommand {
                 target: AppState::MainMenu,
                 delay: Timer::from_seconds(2., TimerMode::Once),
             });

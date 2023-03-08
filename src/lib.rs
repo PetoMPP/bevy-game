@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use plugins::{
     delayed_state_switch_plugin::DelayedStateSwitchPlugin, game::game_plugin::GamePlugin,
     resources_plugin::ResourcePlugin, sprite_animation_plugin::SpriteAnimationPlugin,
-    start_menu::start_menu_plugin::StartMenuPlugin,
+    start_menu::start_menu_plugin::StartMenuPlugin, ui_interaction_plugin::UiInteractionPlugin,
 };
 use resources::viewport_size::ViewportSize;
 
@@ -14,6 +14,7 @@ mod resources;
 pub enum AppState {
     MainMenu,
     Playing,
+    Paused
 }
 
 pub const SPRITE_SCALE: f32 = 0.5;
@@ -29,6 +30,7 @@ fn build_app() -> App {
         .add_plugin(DelayedStateSwitchPlugin)
         .add_plugin(SpriteAnimationPlugin)
         .add_plugin(ResourcePlugin)
+        .add_plugin(UiInteractionPlugin)
         .add_plugin(GamePlugin)
         .add_plugin(StartMenuPlugin)
         .add_state(AppState::MainMenu);

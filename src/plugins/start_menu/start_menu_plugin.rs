@@ -1,57 +1,26 @@
-use bevy::{app::AppExit, prelude::*};
+use bevy::prelude::*;
 
-use crate::{resources::fonts::Fonts, AppState};
-
-const BUTTON_NORMAL_RGBA: Color = Color::rgba(1., 1., 1., 0.5);
-const BUTTON_HOVER_RGBA: Color = Color::rgba(1., 1., 1., 0.3);
-const BUTTON_CLICK_RGBA: Color = Color::rgba(1., 1., 1., 0.8);
-
-#[derive(Component, Clone, Copy)]
-pub enum StartMenuButton {
-    StartGame,
-    Exit,
-}
-
-#[derive(Component)]
-pub struct RootNode;
-
-impl StartMenuButton {
-    pub fn get_text(&self) -> String {
-        return match &self {
-            StartMenuButton::StartGame => "Start game!".to_string(),
-            StartMenuButton::Exit => "Exit to windows".to_string(),
-        };
-    }
-
-    pub fn on_click(
-        &self,
-        app_state: &mut ResMut<State<AppState>>,
-        exit: &mut EventWriter<AppExit>,
-    ) {
-        match *self {
-            StartMenuButton::StartGame => {
-                app_state.set(AppState::Playing).unwrap();
-            }
-            StartMenuButton::Exit => {
-                exit.send(AppExit);
-            }
-        }
-    }
-}
+use crate::{
+    components::root_node::RootNode,
+    plugins::{
+        delayed_state_switch_plugin::StateActionButton,
+        ui_interaction_plugin::{UiButton, UiButtonColors},
+    },
+    resources::fonts::Fonts,
+    AppState,
+};
 
 pub struct StartMenuPlugin;
 
 impl Plugin for StartMenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_enter(AppState::MainMenu).with_system(setup_system))
-            .add_system_set(
-                SystemSet::on_update(AppState::MainMenu).with_system(interaction_system),
-            )
             .add_system_set(SystemSet::on_exit(AppState::MainMenu).with_system(cleanup_system));
     }
 }
 
 fn setup_system(mut commands: Commands, fonts: Res<Fonts>) {
+    let colors = UiButtonColors::default();
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(get_root_node())
@@ -60,12 +29,24 @@ fn setup_system(mut commands: Commands, fonts: Res<Fonts>) {
             parent
                 .spawn(get_menu_container())
                 .with_children(add_title(&fonts))
-                .with_children(add_button(StartMenuButton::StartGame, &fonts))
-                .with_children(add_button(StartMenuButton::Exit, &fonts));
+                .with_children(add_button(
+                    StateActionButton::StartGame,
+                    UiButton::new("Start game!", colors.clone()),
+                    &fonts,
+                ))
+                .with_children(add_button(
+                    StateActionButton::Exit,
+                    UiButton::new("Exit to OS", colors.clone()),
+                    &fonts,
+                ));
         });
 }
 
-fn cleanup_system(mut commands: Commands, root_query: Query<Entity, With<RootNode>>, camera_query: Query<Entity, With<Camera2d>>) {
+fn cleanup_system(
+    mut commands: Commands,
+    root_query: Query<Entity, With<RootNode>>,
+    camera_query: Query<Entity, With<Camera2d>>,
+) {
     for cam in camera_query.iter() {
         commands.entity(cam).despawn();
     }
@@ -74,34 +55,19 @@ fn cleanup_system(mut commands: Commands, root_query: Query<Entity, With<RootNod
     }
 }
 
-fn interaction_system(
-    mut app_state: ResMut<State<AppState>>,
-    mut exit: EventWriter<AppExit>,
-    mut query: Query<
-        (&Interaction, &mut BackgroundColor, &StartMenuButton),
-        (Changed<Interaction>, With<Button>),
-    >,
-) {
-    for (interaction, mut bg_color, button) in query.iter_mut() {
-        *bg_color = match *interaction {
-            Interaction::Clicked => {
-                button.on_click(&mut app_state, &mut exit);
-                BUTTON_CLICK_RGBA.into()
-            }
-            Interaction::Hovered => BUTTON_HOVER_RGBA.into(),
-            Interaction::None => BUTTON_NORMAL_RGBA.into(),
-        }
-    }
-}
-
-fn add_button(button: StartMenuButton, fonts: &Res<Fonts>) -> impl Fn(&mut ChildBuilder) {
+fn add_button(
+    button: StateActionButton,
+    menu_button: UiButton,
+    fonts: &Res<Fonts>,
+) -> impl Fn(&mut ChildBuilder) {
     let font = fonts.regular.clone();
     move |parent| {
         parent
-            .spawn(get_button())
-            .insert(button)
+            .spawn(get_button(menu_button.colors.none_color))
+            .insert(menu_button.clone())
+            .insert(button.clone())
             .with_children(|parent| {
-                parent.spawn(get_button_text(button.get_text(), font.clone()));
+                parent.spawn(get_button_text(menu_button.text.clone(), font.clone()));
             });
     }
 }
@@ -131,7 +97,7 @@ fn get_button_text(text: impl Into<String>, font: Handle<Font>) -> TextBundle {
     )
 }
 
-fn get_button() -> ButtonBundle {
+fn get_button(background_color: Color) -> ButtonBundle {
     ButtonBundle {
         style: Style {
             size: Size::new(Val::Px(250.), Val::Px(80.)),
@@ -139,7 +105,7 @@ fn get_button() -> ButtonBundle {
             justify_content: JustifyContent::Center,
             ..Default::default()
         },
-        background_color: BUTTON_NORMAL_RGBA.into(),
+        background_color: background_color.into(),
         ..Default::default()
     }
 }
@@ -156,7 +122,7 @@ fn get_menu_container() -> NodeBundle {
             margin: UiRect::all(Val::Percent(15.)),
             ..Default::default()
         },
-        background_color: Color::rgba(1., 1., 1., 0.5).into(),
+        background_color: Color::rgba(0.75, 0.75, 0.79, 1.0).into(),
         ..Default::default()
     }
 }
