@@ -1,9 +1,10 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main    
+      - master    
 
 env:
   binary: bevy-game
