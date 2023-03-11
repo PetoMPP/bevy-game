@@ -1,11 +1,38 @@
-<!doctype html>
-<html lang="en">
-<script type="module">
+<!DOCTYPE html><html lang="en"><head><script type="module">
   import init from 'bevy_game.js'
-  init()
+      init()
 </script>
 
-<body>
-</body>
 
-</html>
+<link rel="preload" href="/bevy-game-753e1cf25628ef53_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+<link rel="modulepreload" href="/bevy-game-753e1cf25628ef53.js"></head><body>
+
+
+<script type="module">import init from '/bevy-game-753e1cf25628ef53.js';init('/bevy-game-753e1cf25628ef53_bg.wasm');</script><script>(function () {
+    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var url = protocol + '//' + window.location.host + '/_trunk/ws';
+    var poll_interval = 5000;
+    var reload_upon_connect = () => {
+        window.setTimeout(
+            () => {
+                // when we successfully reconnect, we'll force a
+                // reload (since we presumably lost connection to
+                // trunk due to it being killed, so it will have
+                // rebuilt on restart)
+                var ws = new WebSocket(url);
+                ws.onopen = () => window.location.reload();
+                ws.onclose = reload_upon_connect;
+            },
+            poll_interval);
+    };
+
+    var ws = new WebSocket(url);
+    ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.reload) {
+            window.location.reload();
+        }
+    };
+    ws.onclose = reload_upon_connect;
+})()
+</script></body></html>
