@@ -16,28 +16,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: little-core-labs/get-git-tag@v3.0.1
-        id: get_version
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
           override: true
-      - name: install wasm-bindgen-cli
-        run: |
-          cargo install wasm-bindgen-cli
-      - name: Build
-        run: |
-          cargo build --release --target wasm32-unknown-unknown
-      - name: Prepare package
-        run: |
-          wasm-bindgen --no-typescript --out-name bevy_game --out-dir wasm --target web target/wasm32-unknown-unknown/release/${{ env.binary }}.wasm
-          cp -r assets wasm/
 
-      - name: Deploy to Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - uses: jetli/trunk-action@v0.1.0
+      - uses: jetli/wasm-bindgen-action@v0.1.0
+
+      - run: trunk build --release
+
+      - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./wasm
-      
+          publish_dir: ./dist
