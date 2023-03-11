@@ -4,7 +4,7 @@ use crate::AppState;
 
 use super::{
     enemy_plugin::EnemyPlugin, explosion_plugin::ExplosionPlugin, movement_plugin::MovementPlugin,
-    player_plugin::PlayerPlugin, pause_menu_plugin::PauseMenuPlugin,
+    pause_menu_plugin::PauseMenuPlugin, player_plugin::PlayerPlugin,
 };
 
 pub struct GamePlugin;

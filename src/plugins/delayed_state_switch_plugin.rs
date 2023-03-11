@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::{prelude::*, app::AppExit};
+use bevy::{app::AppExit, prelude::*};
 
 use crate::AppState;
 

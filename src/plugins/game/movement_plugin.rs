@@ -1,10 +1,13 @@
 use bevy::prelude::*;
 
-use crate::{components::{
-    sizeable::Sizeable,
-    movable::{Movable, MovementViewportBehavior},
-    velocity::{AngleVelocity, Velocity},
-}, ViewportSize, AppState};
+use crate::{
+    components::{
+        movable::{Movable, MovementViewportBehavior},
+        sizeable::Sizeable,
+        velocity::{AngleVelocity, Velocity},
+    },
+    AppState, ViewportSize,
+};
 pub const TIME_STEP: f32 = 1. / 60.;
 pub const BASE_SPEED: f32 = 250.;
 

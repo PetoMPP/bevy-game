@@ -31,12 +31,12 @@ fn setup_system(mut commands: Commands, fonts: Res<Fonts>) {
                 .with_children(add_title(&fonts))
                 .with_children(add_button(
                     StateActionButton::StartGame,
-                    UiButton::new("Start game!", colors.clone()),
+                    UiButton::new("Start game!", colors),
                     &fonts,
                 ))
                 .with_children(add_button(
                     StateActionButton::Exit,
-                    UiButton::new("Exit to OS", colors.clone()),
+                    UiButton::new("Exit to OS", colors),
                     &fonts,
                 ));
         });
@@ -65,7 +65,7 @@ fn add_button(
         parent
             .spawn(get_button(menu_button.colors.none_color))
             .insert(menu_button.clone())
-            .insert(button.clone())
+            .insert(button)
             .with_children(|parent| {
                 parent.spawn(get_button_text(menu_button.text.clone(), font.clone()));
             });
@@ -90,9 +90,9 @@ fn get_button_text(text: impl Into<String>, font: Handle<Font>) -> TextBundle {
     TextBundle::from_section(
         text,
         TextStyle {
-            font: font.clone(),
+            font,
             font_size: 30.,
-            color: Color::BLACK.into(),
+            color: Color::BLACK,
         },
     )
 }

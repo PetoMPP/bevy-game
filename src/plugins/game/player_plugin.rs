@@ -5,8 +5,9 @@ use crate::{
         sizeable::Sizeable,
         velocity::{AngleVelocity, Velocity},
     },
+    plugins::delayed_state_switch_plugin::StateSetCommand,
     resources::textures::Textures,
-    AppState, ViewportSize, SPRITE_SCALE, plugins::delayed_state_switch_plugin::StateSetCommand,
+    AppState, ViewportSize, SPRITE_SCALE,
 };
 use bevy::prelude::*;
 
@@ -48,25 +49,25 @@ pub struct HitPlayer;
 impl PlayerKeyBinding {
     fn pressed(&self, key: Res<Input<KeyCode>>) -> Vec<PlayerKey> {
         let mut result = Vec::new();
-        if self.up.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.up.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::Up);
         }
-        if self.down.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.down.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::Down);
         }
-        if self.left.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.left.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::Left);
         }
-        if self.right.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.right.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::Right);
         }
-        if self.rotate_cw.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.rotate_cw.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::RotateCw);
         }
-        if self.rotate_ccw.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.rotate_ccw.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::RotateCcw);
         }
-        if self.fire.iter().find(|k| key.pressed(**k)).is_some() {
+        if self.fire.iter().any(|k| key.pressed(*k)) {
             result.push(PlayerKey::Fire);
         }
         result
@@ -109,12 +110,13 @@ fn cleanup_system(
     proj_query: Query<Entity, With<Projectile>>,
     mut last_fire: ResMut<PlayerLastFire>,
 ) {
-    player_query.iter()
-    .chain(hit_query.iter())
-    .chain(proj_query.iter())
-    .for_each(|e| {
-        commands.entity(e).despawn();
-    });
+    player_query
+        .iter()
+        .chain(hit_query.iter())
+        .chain(proj_query.iter())
+        .for_each(|e| {
+            commands.entity(e).despawn();
+        });
     last_fire.0 = 0.;
 }
 
@@ -173,15 +175,14 @@ fn player_fire_system(
             })
             .rotate(player_trans.rotation);
             let mut spawn_fire = |offset: Vec3| {
-                let trans = player_trans.translation.clone() + offset;
+                let trans = player_trans.translation + offset;
                 commands
                     .spawn(SpriteBundle {
                         texture: textures.player_fire.image.clone(),
                         transform: Transform {
                             translation: trans,
-                            scale: player_trans.scale.clone(),
+                            scale: player_trans.scale,
                             rotation: player_trans.rotation,
-                            ..Default::default()
                         },
                         ..Default::default()
                     })

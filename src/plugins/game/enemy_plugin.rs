@@ -57,9 +57,12 @@ fn cleanup_system(
     respawn_query: Query<Entity, With<EnemyRespawn>>,
     enemy_query: Query<Entity, With<Enemy>>,
 ) {
-    respawn_query.iter().chain(enemy_query.iter()).for_each(|e| {
-        commands.entity(e).despawn();
-    });
+    respawn_query
+        .iter()
+        .chain(enemy_query.iter())
+        .for_each(|e| {
+            commands.entity(e).despawn();
+        });
     last_spawn.0 = *LastEnemyRespawn::default();
 }
 

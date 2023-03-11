@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     components::root_node::RootNode,
-    plugins::{ui_interaction_plugin::UiButton, delayed_state_switch_plugin::StateActionButton},
+    plugins::{delayed_state_switch_plugin::StateActionButton, ui_interaction_plugin::UiButton},
     resources::fonts::Fonts,
     AppState,
 };
@@ -58,7 +58,7 @@ fn setup_system(mut commands: Commands, fonts: Res<Fonts>, bindings: Res<PauseMe
                 TextStyle {
                     font: fonts.bold.clone(),
                     font_size: 80.,
-                    color: Color::WHITE.into(),
+                    color: Color::WHITE,
                 },
             ));
         })
@@ -84,7 +84,7 @@ fn setup_system(mut commands: Commands, fonts: Res<Fonts>, bindings: Res<PauseMe
                         TextStyle {
                             font: fonts.bold.clone(),
                             font_size: 30.,
-                            color: Color::WHITE.into(),
+                            color: Color::WHITE,
                         },
                     ));
                 });
@@ -98,12 +98,12 @@ fn get_unpause_description_node(
     let reg_style = TextStyle {
         font: fonts.italic.clone(),
         font_size: 40.,
-        color: Color::WHITE.into(),
+        color: Color::WHITE,
     };
     let bold_style = TextStyle {
         font: fonts.italic_bold.clone(),
         font_size: 40.,
-        color: Color::MIDNIGHT_BLUE.into(),
+        color: Color::MIDNIGHT_BLUE,
     };
     let mut sections = vec![TextSection {
         value: "To unpause the game press ".to_string(),
@@ -122,7 +122,7 @@ fn get_unpause_description_node(
     sections.pop();
     sections.push(TextSection {
         value: " key...".to_string(),
-        style: reg_style.clone(),
+        style: reg_style,
     });
 
     move |parent| {
