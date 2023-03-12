@@ -14,7 +14,7 @@ mod resources;
 pub enum AppState {
     MainMenu,
     Playing,
-    Paused
+    Paused,
 }
 
 pub const SPRITE_SCALE: f32 = 0.5;
@@ -25,8 +25,7 @@ pub fn run() {
 
 fn build_app() -> App {
     let mut app = App::new();
-    app
-        .add_plugins(DefaultPlugins)
+    app.add_plugins(DefaultPlugins)
         .add_plugin(DelayedStateSwitchPlugin)
         .add_plugin(SpriteAnimationPlugin)
         .add_plugin(ResourcePlugin)

@@ -1,10 +1,13 @@
 use bevy::prelude::*;
 
-use crate::{components::{
-    sizeable::Sizeable,
-    movable::{Movable, MovementViewportBehavior},
-    velocity::{AngleVelocity, Velocity},
-}, ViewportSize, AppState};
+use crate::{
+    components::{
+        movable::{Movable, MovementViewportBehavior},
+        sizeable::Sizeable,
+        velocity::{AngleVelocity, Velocity},
+    },
+    AppState, ViewportSize,
+};
 pub const TIME_STEP: f32 = 1. / 60.;
 pub const BASE_SPEED: f32 = 250.;
 
@@ -16,17 +19,19 @@ impl Plugin for MovementPlugin {
     }
 }
 
+type MovementQuery<'a> = (
+    Entity,
+    &'a Velocity,
+    Option<&'a AngleVelocity>,
+    &'a mut Transform,
+    &'a Movable,
+    &'a Sizeable,
+);
+
 fn movement_system(
     mut commands: Commands,
     viewport_size: Res<ViewportSize>,
-    mut query: Query<(
-        Entity,
-        &Velocity,
-        Option<&AngleVelocity>,
-        &mut Transform,
-        &Movable,
-        &Sizeable,
-    )>,
+    mut query: Query<MovementQuery>,
 ) {
     for (e, vel, ang_vel, mut trans, movable, sizeable) in query.iter_mut() {
         let velocity = match ang_vel {

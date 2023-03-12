@@ -27,9 +27,10 @@ impl UiButton {
     }
 
     pub fn default_with_a(a: f32) -> Self {
-        let mut result = Self::default();
-        result.colors = UiButtonColors::default_with_a(a);
-        result
+        Self {
+            colors: UiButtonColors::default_with_a(a),
+            ..Default::default()
+        }
     }
 }
 
@@ -37,7 +38,7 @@ const NORMAL_COLOR: Color = Color::rgba(0.8, 0.8, 0.85, 1.);
 const HOVER_COLOR: Color = Color::rgba(0.9, 0.9, 0.95, 1.);
 const CLICK_COLOR: Color = Color::rgba(0.7, 0.7, 0.74, 1.);
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct UiButtonColors {
     pub none_color: Color,
     pub hover_color: Color,
@@ -57,21 +58,20 @@ impl Default for UiButtonColors {
 impl UiButtonColors {
     pub fn default_with_a(a: f32) -> Self {
         let mut result = Self::default();
-        result.none_color.set_a(a); 
-        result.hover_color.set_a(a); 
+        result.none_color.set_a(a);
+        result.hover_color.set_a(a);
         result.click_color.set_a(a);
-        result 
+        result
     }
 
     pub fn get_color(&self, interaction: &Interaction) -> Color {
-        return match interaction {
+        match interaction {
             Interaction::Clicked => self.click_color,
             Interaction::Hovered => self.hover_color,
             Interaction::None => self.none_color,
-        };
+        }
     }
 }
-
 
 pub struct UiInteractionPlugin;
 
@@ -81,11 +81,10 @@ impl Plugin for UiInteractionPlugin {
     }
 }
 
+type ChangedButtonFilter = (Changed<Interaction>, With<Button>);
+
 fn button_interaction_system(
-    mut query: Query<
-        (&Interaction, &mut BackgroundColor, &UiButton),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut query: Query<(&Interaction, &mut BackgroundColor, &UiButton), ChangedButtonFilter>,
 ) {
     for (interaction, mut bg_color, button) in query.iter_mut() {
         *bg_color = button.colors.get_color(interaction).into();
