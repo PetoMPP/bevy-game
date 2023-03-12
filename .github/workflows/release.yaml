@@ -30,14 +30,14 @@ jobs:
       - uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "\"/"
-          replace: "\"/${{ github.workspace }}/"
-          include: ./dist/index.html
+          replace: "\"/bevy-game/"
+          include: "dist/*.html"
 
       - uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "'/"
-          replace: "'/${{ github.workspace }}/"
-          include: ./dist/index.html
+          replace: "'/bevy-game/"
+          include: "dist/*.html"
 
       - uses: peaceiris/actions-gh-pages@v3
         with:
