@@ -1,7 +1,6 @@
 use crate::{
     components::{
         movable::{Movable, MovementOptions, MovementViewportBehavior},
-        projectile::{Projectile, Target},
         sizeable::Sizeable,
         velocity::{AngleVelocity, Velocity},
     },
@@ -45,6 +44,9 @@ pub struct Player;
 
 #[derive(Component)]
 pub struct HitPlayer;
+
+#[derive(Component)]
+pub struct PlayerProjectile;
 
 impl PlayerKeyBinding {
     fn pressed(&self, key: Res<Input<KeyCode>>) -> Vec<PlayerKey> {
@@ -107,7 +109,7 @@ fn cleanup_system(
     mut commands: Commands,
     player_query: Query<Entity, With<Player>>,
     hit_query: Query<Entity, With<HitPlayer>>,
-    proj_query: Query<Entity, With<Projectile>>,
+    proj_query: Query<Entity, With<PlayerProjectile>>,
     mut last_fire: ResMut<PlayerLastFire>,
 ) {
     player_query
@@ -186,7 +188,7 @@ fn player_fire_system(
                         },
                         ..Default::default()
                     })
-                    .insert(Projectile(Target::Enemy))
+                    .insert(PlayerProjectile)
                     .insert(Velocity(Vec3::new(0., 1.5, 0.)).rotate(player_trans.rotation))
                     .insert(Sizeable(textures.player_fire.size_px))
                     .insert(Movable(MovementOptions {

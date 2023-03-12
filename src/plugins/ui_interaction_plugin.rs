@@ -81,11 +81,10 @@ impl Plugin for UiInteractionPlugin {
     }
 }
 
+type ChangedButtonFilter = (Changed<Interaction>, With<Button>);
+
 fn button_interaction_system(
-    mut query: Query<
-        (&Interaction, &mut BackgroundColor, &UiButton),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut query: Query<(&Interaction, &mut BackgroundColor, &UiButton), ChangedButtonFilter>,
 ) {
     for (interaction, mut bg_color, button) in query.iter_mut() {
         *bg_color = button.colors.get_color(interaction).into();

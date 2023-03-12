@@ -4,17 +4,12 @@ use rand::Rng;
 
 use crate::AppState;
 use crate::{
-    components::{
-        projectile::{Projectile, Target},
-        sizeable::Sizeable,
-    },
-    resources::textures::Textures,
-    ViewportSize, SPRITE_SCALE,
+    components::sizeable::Sizeable, resources::textures::Textures, ViewportSize, SPRITE_SCALE,
 };
 
 use super::explosion_plugin::ExplosionInvoke;
 use super::movement_plugin::TIME_STEP;
-use super::player_plugin::{HitPlayer, Player};
+use super::player_plugin::{HitPlayer, Player, PlayerProjectile};
 
 const INITIAL_ENEMIES_COUNT: u16 = 5;
 const ENEMY_RESPAWN_DELAY: f32 = TIME_STEP * 120.;
@@ -153,7 +148,7 @@ fn enemy_hit_player_on_collision_system(
 
 fn enemy_get_hit_system(
     mut commands: Commands,
-    proj_query: Query<(Entity, &Sizeable, &Transform, &Projectile)>,
+    proj_query: Query<(Entity, &Sizeable, &Transform), With<PlayerProjectile>>,
     enemy_query: Query<(Entity, &Sizeable, &Transform), With<Enemy>>,
 ) {
     let mut despawn_enemy = |enemy_entity: Entity, enemy_trans: &Transform, proj_entity: Entity| {
@@ -165,10 +160,7 @@ fn enemy_get_hit_system(
         commands.spawn_empty().insert(EnemyRespawn {});
     };
     for (enemy_entity, enemy_size, enemy_trans) in enemy_query.iter() {
-        for (proj_entity, proj_size, proj_trans, _) in proj_query
-            .iter()
-            .filter(|(_, _, _, projectile)| ***projectile == Target::Enemy)
-        {
+        for (proj_entity, proj_size, proj_trans) in proj_query.iter() {
             if collide_entities(proj_trans, proj_size, enemy_trans, enemy_size) {
                 despawn_enemy(enemy_entity, enemy_trans, proj_entity);
                 break;
