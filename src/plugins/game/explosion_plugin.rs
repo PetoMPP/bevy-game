@@ -28,8 +28,12 @@ impl Plugin for ExplosionPlugin {
     }
 }
 
-fn cleanup_system(mut commands: Commands, query: Query<Entity, With<ExplosionInvoke>>) {
-    for e in query.iter() {
+fn cleanup_system(
+    mut commands: Commands,
+    expl_query: Query<Entity, With<AnimationTimer>>,
+    invoke_query: Query<Entity, With<ExplosionInvoke>>,
+) {
+    for e in expl_query.iter().chain(invoke_query.iter()) {
         commands.entity(e).despawn();
     }
 }

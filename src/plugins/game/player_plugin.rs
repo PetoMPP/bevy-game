@@ -5,34 +5,12 @@ use crate::{
         velocity::{AngleVelocity, Velocity},
     },
     plugins::delayed_state_switch_plugin::StateSetCommand,
-    resources::textures::Textures,
+    resources::{textures::Textures, key_bindings::{PlayerKeyBinding, PlayerKey}},
     AppState, ViewportSize, SPRITE_SCALE,
 };
 use bevy::prelude::*;
 
 use super::explosion_plugin::ExplosionInvoke;
-
-#[derive(PartialEq)]
-enum PlayerKey {
-    Up,
-    Down,
-    Left,
-    Right,
-    RotateCw,
-    RotateCcw,
-    Fire,
-}
-
-#[derive(Resource)]
-struct PlayerKeyBinding {
-    up: Vec<KeyCode>,
-    down: Vec<KeyCode>,
-    left: Vec<KeyCode>,
-    right: Vec<KeyCode>,
-    rotate_cw: Vec<KeyCode>,
-    rotate_ccw: Vec<KeyCode>,
-    fire: Vec<KeyCode>,
-}
 
 const FIRE_COOLDOWN_S: f32 = 0.25;
 
@@ -47,48 +25,6 @@ pub struct HitPlayer;
 
 #[derive(Component)]
 pub struct PlayerProjectile;
-
-impl PlayerKeyBinding {
-    fn pressed(&self, key: Res<Input<KeyCode>>) -> Vec<PlayerKey> {
-        let mut result = Vec::new();
-        if self.up.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::Up);
-        }
-        if self.down.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::Down);
-        }
-        if self.left.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::Left);
-        }
-        if self.right.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::Right);
-        }
-        if self.rotate_cw.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::RotateCw);
-        }
-        if self.rotate_ccw.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::RotateCcw);
-        }
-        if self.fire.iter().any(|k| key.pressed(*k)) {
-            result.push(PlayerKey::Fire);
-        }
-        result
-    }
-}
-
-impl Default for PlayerKeyBinding {
-    fn default() -> Self {
-        Self {
-            up: vec![KeyCode::W, KeyCode::Up],
-            down: vec![KeyCode::S, KeyCode::Down],
-            left: vec![KeyCode::A, KeyCode::Left],
-            right: vec![KeyCode::D, KeyCode::Right],
-            rotate_cw: vec![KeyCode::E],
-            rotate_ccw: vec![KeyCode::Q],
-            fire: vec![KeyCode::Space],
-        }
-    }
-}
 
 pub struct PlayerPlugin;
 
@@ -127,7 +63,6 @@ fn player_spawn_system(
     viewport_size: Res<ViewportSize>,
     textures: Res<Textures>,
 ) {
-    commands.insert_resource(PlayerKeyBinding::default());
     commands.insert_resource(PlayerLastFire(0.));
 
     let ytrans = -viewport_size.h / 2. + textures.player.size_px.y * SPRITE_SCALE / 2.;

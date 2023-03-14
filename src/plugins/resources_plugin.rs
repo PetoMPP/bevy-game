@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::resources::{fonts::Fonts, textures::Textures, viewport_size::ViewportSize};
+use crate::resources::{fonts::Fonts, textures::Textures, viewport_size::ViewportSize, key_bindings::{PlayerKeyBinding, PauseMenuKeyBindings}};
 
 pub struct ResourcePlugin;
 
@@ -19,6 +19,10 @@ fn create_required_resources(
     // windows
     let windows = windows.get_primary_mut().unwrap();
     windows.set_resolution(1000., 600.);
+
+    // insert key bindings
+    commands.insert_resource(PlayerKeyBinding::default());
+    commands.insert_resource(PauseMenuKeyBindings::default());
 
     // insert resources
     commands.insert_resource(ViewportSize { w: 1000., h: 600. });

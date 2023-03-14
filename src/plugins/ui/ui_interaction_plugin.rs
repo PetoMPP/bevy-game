@@ -25,13 +25,6 @@ impl UiButton {
             clicked: false,
         }
     }
-
-    pub fn default_with_a(a: f32) -> Self {
-        Self {
-            colors: UiButtonColors::default_with_a(a),
-            ..Default::default()
-        }
-    }
 }
 
 const NORMAL_COLOR: Color = Color::rgba(0.8, 0.8, 0.85, 1.);
